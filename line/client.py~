@@ -188,11 +188,16 @@ class LineClient(LineAPI):
             if c.id == contact.mid:
                 self.raise_error("%s already exists" % contact.displayName)
                 return 
-        c = LineContact(self, contact)
+        print '-'*10
+        print type(contact)
+        print contact
+        print dir(contact)
+        c = LineContact(self, contact.values()[0])
         self.contacts.append(c)
 
         self.contacts.sort()
         return c
+
     @check_auth
     def _findAndAddContactByPhone(self, phone):
         """Find and add a `contact` by phone number
@@ -225,12 +230,10 @@ class LineClient(LineAPI):
         """
         try:
             contact = self._findAndAddContactsByEmail(email)
-            contact = contact.values()[0]
         except TalkException as e:
             self.raise_error(e.reason)
-        except IndexError as e:
-            self.raise_error('list index out of range')
-#        contact = contact.values()[0]
+
+        contact = contact.values()[0]
 
         for c in self.contacts:
             if c.id == contact.mid:

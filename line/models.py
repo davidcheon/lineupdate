@@ -13,6 +13,7 @@ import tempfile
 from time import time
 from datetime import datetime
 from curve.ttypes import Message, ContentType
+import time
 
 class LineMessage:
     """LineMessage wrapper"""
@@ -67,6 +68,15 @@ class LineBase(object):
         except Exception as e:
             raise e
 
+    def sendContactMessage(self, msg):
+        """Send a message
+        
+        :param text: text message to send
+        """
+        msg.id=self.id
+        self._client.sendMessage(msg)
+
+        return True
     def sendSticker(self,
                     stickerId = "13",
                     stickerPackageId = "1",

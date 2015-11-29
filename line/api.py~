@@ -33,7 +33,7 @@ class LineAPI(object):
     """This class is a wrapper of LINE API
 
     """
-    LINE_DOMAIN = "http://gd2.line.naver.jp"
+    LINE_DOMAIN = "https://gd2.line.naver.jp"
 
     LINE_HTTP_URL          = LINE_DOMAIN + "/api/v4/TalkService.do"
     LINE_HTTP_IN_URL       = LINE_DOMAIN + "/P4"
@@ -61,7 +61,8 @@ class LineAPI(object):
         to communicate with LINE server
         """
 #        raise Exception("Code is removed because of the request of LINE corporation")
-        pass
+	pass
+
     def updateAuthToken(self):
         """
         After login, update authToken to avoid expiration of
@@ -223,8 +224,7 @@ class LineAPI(object):
     def _findAndAddContactsByUserid(self, userid, seq=0):
         """Find and add contacts by Userid"""
         return self._client.findAndAddContactsByUserid(seq, userid)
-    def _findAndAddContactsByContact(self,contact,seq=0):
-		return self._client.findAndAddContactsByContact(seq,contact)
+
     def _findContactsByPhone(self, phones):
         """Find contacts by phone"""
         return self._client.findContactsByPhone(phones)
