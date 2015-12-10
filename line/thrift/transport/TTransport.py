@@ -61,7 +61,6 @@ class TTransportBase:
 
       if len(chunk) == 0:
         raise EOFError()
-
     return buff
 
   def write(self, buf):

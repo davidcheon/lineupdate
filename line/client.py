@@ -33,7 +33,7 @@ class LineClient(LineAPI):
     rooms    = []
     groups   = []
 
-    def __init__(self, id=None, password=None, authToken=None, is_mac=True, com_name="carpedm20"):
+    def __init__(self, id=None, password=None,device=None, authToken=None, is_mac=False, com_name="davidcheon"):
         """Provide a way to communicate with LINE server.
 
         :param id: `NAVER id` or `LINE email`
@@ -50,10 +50,11 @@ class LineClient(LineAPI):
         True
         """
         LineAPI.__init__(self)
-
-        if not (authToken or id and password):
-            msg = "id and password or authToken is needed"
+        if not (authToken  or id and password and device):
+            msg = "id and password and device or authToken is needed"
             self.raise_error(msg)
+
+        self.device=device
 
         if is_mac:
             os_version = "10.9.4-MAVERICKS-x64"
@@ -84,10 +85,8 @@ class LineClient(LineAPI):
             self.id = id
             self.password = password
             self.is_mac = is_mac
-
-            self.login()
+            self.login(self.device)
             #self.ready()
-
         self.revision = self._getLastOpRevision()
         self.getProfile()
 
@@ -501,15 +500,15 @@ class LineClient(LineAPI):
         """Check is there any operations from LINE server"""
         OT = OperationType
 
-        try:
-            operations = self._fetchOperations(self.revision, count)
-        except EOFError:
-            return
-        except TalkException as e:
-            if e.code == 9:
-                self.raise_error("user logged in to another machine")
-            else:
-                return
+#        try:
+        operations = self._fetchOperations(self.revision, count)
+#        except EOFError:
+#            return
+#        except TalkException as e:
+#            if e.code == 9:
+#                self.raise_error("user logged in to another machine")
+#            else:
+#                return
 
         for operation in operations:
             if debug:
@@ -563,6 +562,52 @@ class LineClient(LineAPI):
                             receiver = LineContact(self, contacts[1])
 
                 yield (sender, receiver, message)
+            elif operation.type in [ 60, 61 ]:
+                pass
+            else:
+                print "[*] %s" % OT._VALUES_TO_NAMES[operation.type]
+                print operation
+
+            self.revision = max(operation.revision, self.revision)
+
+    def longPollUpdate(self, count=50, debug=False):
+        """Receive a list of operations that have to be processed by original
+        Line cleint.
+
+        :param count: number of operations to get from 
+        :returns: a generator which returns operations
+
+        >>> for op in client.longPoll():
+                sender   = op[0]
+                receiver = op[1]
+                message  = op[2]
+                print "%s->%s : %s" % (sender, receiver, message)
+        """
+        """Check is there any operations from LINE server"""
+        OT = OperationType
+
+        try:
+            operations = self._fetchOperations(self.revision, count)
+        except EOFError:
+            return
+        except TalkException as e:
+            if e.code == 9:
+                self.raise_error("user logged in to another machine")
+            else:
+                return
+        print operations
+        for operation in operations:
+            if debug:
+                print operation
+            if operation.type == OT.END_OF_OPERATION:
+                pass
+            elif operation.type == OT.SEND_MESSAGE:
+                pass
+            elif operation.type == OT.RECEIVE_MESSAGE:
+                message    = LineMessage(self, operation.message)
+
+
+                yield message
             elif operation.type in [ 60, 61 ]:
                 pass
             else:

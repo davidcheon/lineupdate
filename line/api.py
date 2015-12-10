@@ -9,6 +9,8 @@
     :license: BSD, see LICENSE for more details.
 """
 import rsa
+import os
+import time
 import requests
 try:
     import simplejson as json
@@ -68,7 +70,7 @@ class LineAPI(object):
         authToken. This method skip the PinCode validation step.
         """
 #        if self.certificate:
-        self.login()
+        self.login(self.device)
         self.tokenLogin()
 
         return True
@@ -82,7 +84,7 @@ class LineAPI(object):
         self.protocol = TCompactProtocol.TCompactProtocol(self.transport)
         self._client  = CurveThrift.Client(self.protocol)
         
-    def login(self):
+    def login(self,device):
         """Login to LINE server."""
         if self.provider == CurveThrift.Provider.LINE: # LINE
             j = self._get_json(self.LINE_SESSION_LINE_URL)
@@ -100,7 +102,8 @@ class LineAPI(object):
 
         self.transport = THttpClient.THttpClient(self.LINE_HTTP_URL)
         self.transport.setCustomHeaders(self._headers)
-
+        
+        self.device=device
         self.protocol = TCompactProtocol.TCompactProtocol(self.transport)
         self._client   = CurveThrift.Client(self.protocol)
 
@@ -114,7 +117,6 @@ class LineAPI(object):
         msg = self._client.loginWithIdentityCredentialForCertificate(
                 self.id, self.password, keyname, crypto, True, self.ip,
                 self.com_name, self.provider, self.certificate)
-
         if msg.type == 1:
             self.certificate = msg.certificate
             self.authToken = self._headers['X-Line-Access'] = msg.authToken
@@ -124,19 +126,31 @@ class LineAPI(object):
         elif msg.type == 3:
             self._headers['X-Line-Access'] = msg.verifier
             self._pinCode = msg.pinCode
-
+#==================================================================
             print "Enter PinCode '%s' to your mobile phone in 2 minutes"\
                     % self._pinCode
 
+#=========================adb operation===========================
+            time.sleep(30)
+            os.system('adb -s %s shell input text %s'%(device,self._pinCode))
+            time.sleep(2)
+            os.system('adb -s %s shell input tap 300 1010'%(device))
+            time.sleep(2)
+            os.system('adb -s %s shell input tap 300 650'%(device))
+            time.sleep(2)
+#==================================================================
             j = self.get_json(self.LINE_CERTIFICATE_URL)
             self.verifier = j['result']['verifier']
 
             msg = self._client.loginWithVerifierForCertificate(self.verifier)
             if msg.type == 1:
                 if msg.certificate is not None:
-                    with open(self.CERT_FILE,'w') as f:
-                        f.write(msg.certificate)
-                    self.certificate = msg.certificate
+                    try:
+                        with open(self.CERT_FILE,'w') as f:
+                            f.write(msg.certificate)
+                        self.certificate = msg.certificate
+                    except Exception,e:
+                        pass
                 if msg.authToken is not None:
                     self.authToken = self._headers['X-Line-Access'] = msg.authToken
                     return True
@@ -182,7 +196,10 @@ class LineAPI(object):
     def _getBlockedContactIds(self):
         """Get all blocked contacts of your LINE account"""
         return self._client.getBlockedContactIds()
-
+    def _blockContact(self,id):
+        return self._client.blockContact(reqSeq=0,id=id)
+    def _unblockContact(self,id):
+        return self._client.unblockContact(reqSeq=0,id=id)
     def _getContacts(self, ids):
         """Get contact information list from ids
 

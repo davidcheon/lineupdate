@@ -285,7 +285,7 @@ class TCompactProtocol(TProtocolBase):
     self.state = FIELD_READ
 
   def __readUByte(self):
-    result, = unpack('!B', self.trans.readAll(1))
+    result, = unpack('!B',self.trans.readAll(1))
     return result
 
   def __readByte(self):

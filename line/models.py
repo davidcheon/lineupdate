@@ -73,7 +73,8 @@ class LineBase(object):
         
         :param text: text message to send
         """
-        msg.id=self.id
+        msg.deliveredTime=0
+        msg.createdTime=int(time.time()*1000)
         self._client.sendMessage(msg)
 
         return True
